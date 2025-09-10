@@ -262,8 +262,22 @@ export class DbManager {
   }
 }
 
-// 导出默认实例
-export const db = new DbManager();
+// 导出数据库管理器实例 - 延迟初始化
+let dbInstance: DbManager | null = null;
+
+export function getDb(): DbManager {
+  if (!dbInstance) {
+    dbInstance = new DbManager();
+  }
+  return dbInstance;
+}
+
+// 为了向后兼容，保留db导出，但使用延迟初始化
+export const db = new Proxy({} as DbManager, {
+  get(target, prop) {
+    return getDb()[prop as keyof DbManager];
+  }
+});
 
 // 导出getStorage函数
 export { getStorage };

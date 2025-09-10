@@ -7,8 +7,6 @@ const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 // 模拟的YouTube API Key（实际使用时需要配置真实的API Key）
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || 'demo_key';
 
-const cacheManager = getCacheManager();
-
 // 将频道ID转换为上传播放列表ID（UC -> UU）
 function convertChannelIdToUploadsPlaylistId(channelId: string): string {
   if (channelId.startsWith('UC')) {
@@ -65,7 +63,7 @@ export async function GET(request: NextRequest) {
     const cacheKey = `youtube-videos:${channelId}:${maxResults}`;
 
     try {
-      const cachedVideos = await cacheManager.get(cacheKey);
+      const cachedVideos = await getCacheManager().get(cacheKey);
 
       if (cachedVideos) {
         console.log('从缓存中获取YouTube视频数据');
@@ -121,7 +119,7 @@ export async function GET(request: NextRequest) {
       
       try {
         // 缓存1小时
-        await cacheManager.set(cacheKey, videos, 3600);
+        await getCacheManager().set(cacheKey, videos, 3600);
       } catch (e) {
         console.error('YouTube视频数据写入缓存失败', e);
       }
@@ -145,7 +143,7 @@ export async function GET(request: NextRequest) {
 
     try {
       // 缓存1小时
-      await cacheManager.set(cacheKey, videos, 3600);
+      await getCacheManager().set(cacheKey, videos, 3600);
     } catch (e) {
       console.error('YouTube视频数据写入缓存失败', e);
     }

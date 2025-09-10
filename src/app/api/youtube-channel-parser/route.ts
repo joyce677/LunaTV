@@ -4,7 +4,6 @@ import { getCacheManager } from '@/lib/cache-manager';
 // YouTube Data API v3 的基础URL
 const YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3';
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY || 'demo_key';
-const cacheManager = getCacheManager();
 
 // 获取频道详细信息的函数
 async function getChannelInfo(channelId: string) {
