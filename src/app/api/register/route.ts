@@ -1,9 +1,11 @@
 /* eslint-disable no-console,@typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
-
 import { clearConfigCache, getConfig } from '@/lib/config';
 import { SimpleCrypto } from '@/lib/crypto';
 import { db } from '@/lib/db';
+
+// 强制动态渲染，防止构建时预渲染
+export const dynamic = 'force-dynamic';
 
 export const runtime = 'nodejs';
 

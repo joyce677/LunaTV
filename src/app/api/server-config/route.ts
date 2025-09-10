@@ -7,6 +7,9 @@ import { CURRENT_VERSION } from '@/lib/version'
 
 export const runtime = 'nodejs';
 
+// 强制动态渲染，防止构建时预渲染
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   console.log('server-config called: ', request.url);
 
