@@ -19,10 +19,31 @@ const STORAGE_TYPE =
 function createStorage(): IStorage {
   switch (STORAGE_TYPE) {
     case 'redis':
+      // 检查Redis环境变量是否存在
+      if (!process.env.REDIS_URL) {
+        console.warn(
+          'REDIS_URL env variable is not set. Falling back to localstorage mode.'
+        );
+        return null as unknown as IStorage;
+      }
       return new RedisStorage();
     case 'upstash':
+      // 检查Upstash环境变量是否存在
+      if (!process.env.UPSTASH_URL || !process.env.UPSTASH_TOKEN) {
+        console.warn(
+          'UPSTASH_URL and UPSTASH_TOKEN env variables are not set. Falling back to localstorage mode.'
+        );
+        return null as unknown as IStorage;
+      }
       return new UpstashRedisStorage();
     case 'kvrocks':
+      // 检查KVRocks环境变量是否存在
+      if (!process.env.KVROCKS_URL) {
+        console.warn(
+          'KVROCKS_URL env variable is not set. Falling back to localstorage mode.'
+        );
+        return null as unknown as IStorage;
+      }
       return new KvrocksStorage();
     case 'localstorage':
     default:
