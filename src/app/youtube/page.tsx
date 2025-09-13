@@ -77,37 +77,60 @@ const YouTubePage = () => {
 
         clearTimeout(timeoutId);
         setIsOnline(true);
-        // 只有在连接成功时才加载频道和视频数据
-        loadChannelsAndVideos();
+        // 网络检测通过后，检查配置并加载数据
+        await checkConfigAndLoadData();
       } catch (error) {
         try {
           const proxyResponse = await fetch('/api/youtube-check');
           if (proxyResponse.ok) {
             setIsOnline(true);
-            // 只有在连接成功时才加载频道和视频数据
-            loadChannelsAndVideos();
+            // 网络检测通过后，检查配置并加载数据
+            await checkConfigAndLoadData();
           } else {
+            // 网络检测失败，固定显示网络错误页面
             setIsOnline(false);
           }
         } catch (proxyError) {
+          // 网络检测失败，固定显示网络错误页面
           setIsOnline(false);
         }
       } finally {
         setIsLoading(false);
+      }
+    };
+
+    const checkConfigAndLoadData = async () => {
+      try {
+        // 检查是否配置了频道
+        const channelsResponse = await fetch('/api/youtube-channels');
+        if (!channelsResponse.ok) {
+          // API调用失败，可能是未配置API key
+          setLoadingVideos(false);
+          setInitialLoadComplete(true);
+          return;
+        }
+
+        const channelsData = await channelsResponse.json();
+        const loadedChannels = channelsData.channels || [];
+        
+        if (loadedChannels.length === 0) {
+          // 没有配置频道，显示配置提示页面
+          setLoadingVideos(false);
+          setInitialLoadComplete(true);
+          return;
+        }
+
+        // 配置正常，加载视频数据
+        await loadChannelsAndVideos(loadedChannels);
+      } catch (error) {
+        console.error('检查配置失败:', error);
         setLoadingVideos(false);
         setInitialLoadComplete(true);
       }
     };
 
-    const loadChannelsAndVideos = async () => {
+    const loadChannelsAndVideos = async (loadedChannels: Channel[]) => {
       try {
-        const channelsResponse = await fetch('/api/youtube-channels');
-        if (!channelsResponse.ok) return;
-
-        const channelsData = await channelsResponse.json();
-        const loadedChannels = channelsData.channels || [];
-        if (loadedChannels.length === 0) return;
-
         const newVideosByChannel: { [key: string]: YouTubeVideo[] } = {};
 
         // 确保频道按sortOrder排序
@@ -142,6 +165,9 @@ const YouTubePage = () => {
         setVideosByChannel(newVideosByChannel); // 更新视频数据结构
       } catch (error) {
         console.error('加载频道和视频失败:', error);
+      } finally {
+        setLoadingVideos(false);
+        setInitialLoadComplete(true);
       }
     };
 
