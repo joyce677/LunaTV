@@ -62,9 +62,53 @@ const YouTubePage = () => {
 
   // --- 数据加载 Effect ---
   useEffect(() => {
+    const CACHE_KEY = 'youtube_connectivity_cache';
+    const CACHE_DURATION = 30 * 60 * 1000; // 30分钟
+
+    const getCachedConnectivity = () => {
+      try {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          const { isOnline, timestamp } = JSON.parse(cached);
+          const now = Date.now();
+          if (now - timestamp < CACHE_DURATION) {
+            return isOnline;
+          }
+        }
+      } catch (error) {
+        console.error('读取连通性缓存失败:', error);
+      }
+      return null;
+    };
+
+    const setCachedConnectivity = (isOnline: boolean) => {
+      try {
+        const cacheData = {
+          isOnline,
+          timestamp: Date.now()
+        };
+        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+      } catch (error) {
+        console.error('保存连通性缓存失败:', error);
+      }
+    };
+
     const checkYouTubeAccess = async () => {
+      // 首先检查缓存
+      const cachedResult = getCachedConnectivity();
+      if (cachedResult !== null) {
+        setIsOnline(cachedResult);
+        setIsLoading(false);
+        if (cachedResult) {
+          // 缓存显示网络正常，直接加载数据
+          await checkConfigAndLoadData();
+        }
+        return;
+      }
+
+      // 缓存无效或不存在，进行实际检测
       let isTimeout = false;
-      
+
       try {
         // 设置8秒超时控制
         const controller = new AbortController();
@@ -81,35 +125,41 @@ const YouTubePage = () => {
         });
 
         clearTimeout(timeoutId);
-        
+
         // 如果没有超时，网络检测成功
         if (!isTimeout) {
           setIsOnline(true);
+          setCachedConnectivity(true); // 缓存成功结果
           // 网络检测通过后，检查配置并加载数据
           await checkConfigAndLoadData();
         } else {
           // 超时了，强制设置为离线
           setIsOnline(false);
+          setCachedConnectivity(false); // 缓存失败结果
         }
       } catch (error) {
         // 如果是超时导致的错误，直接设置为离线
         if (isTimeout) {
           setIsOnline(false);
+          setCachedConnectivity(false); // 缓存失败结果
         } else {
           // 尝试备用检测
           try {
             const proxyResponse = await fetch('/api/youtube-check');
             if (proxyResponse.ok) {
               setIsOnline(true);
+              setCachedConnectivity(true); // 缓存成功结果
               // 网络检测通过后，检查配置并加载数据
               await checkConfigAndLoadData();
             } else {
               // 网络检测失败，固定显示网络错误页面
               setIsOnline(false);
+              setCachedConnectivity(false); // 缓存失败结果
             }
           } catch (proxyError) {
             // 网络检测失败，固定显示网络错误页面
             setIsOnline(false);
+            setCachedConnectivity(false); // 缓存失败结果
           }
         }
       } finally {
@@ -130,7 +180,7 @@ const YouTubePage = () => {
 
         const channelsData = await channelsResponse.json();
         const loadedChannels = channelsData.channels || [];
-        
+
         if (loadedChannels.length === 0) {
           // 没有配置频道，显示配置提示页面
           setLoadingVideos(false);
