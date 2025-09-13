@@ -63,10 +63,15 @@ const YouTubePage = () => {
   // --- 数据加载 Effect ---
   useEffect(() => {
     const checkYouTubeAccess = async () => {
+      let isTimeout = false;
+      
       try {
         // 设置8秒超时控制
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒超时
+        const timeoutId = setTimeout(() => {
+          isTimeout = true;
+          controller.abort();
+        }, 8000); // 8秒超时
 
         await fetch('https://www.youtube.com/favicon.ico', {
           method: 'HEAD',
@@ -76,23 +81,36 @@ const YouTubePage = () => {
         });
 
         clearTimeout(timeoutId);
-        setIsOnline(true);
-        // 网络检测通过后，检查配置并加载数据
-        await checkConfigAndLoadData();
+        
+        // 如果没有超时，网络检测成功
+        if (!isTimeout) {
+          setIsOnline(true);
+          // 网络检测通过后，检查配置并加载数据
+          await checkConfigAndLoadData();
+        } else {
+          // 超时了，强制设置为离线
+          setIsOnline(false);
+        }
       } catch (error) {
-        try {
-          const proxyResponse = await fetch('/api/youtube-check');
-          if (proxyResponse.ok) {
-            setIsOnline(true);
-            // 网络检测通过后，检查配置并加载数据
-            await checkConfigAndLoadData();
-          } else {
+        // 如果是超时导致的错误，直接设置为离线
+        if (isTimeout) {
+          setIsOnline(false);
+        } else {
+          // 尝试备用检测
+          try {
+            const proxyResponse = await fetch('/api/youtube-check');
+            if (proxyResponse.ok) {
+              setIsOnline(true);
+              // 网络检测通过后，检查配置并加载数据
+              await checkConfigAndLoadData();
+            } else {
+              // 网络检测失败，固定显示网络错误页面
+              setIsOnline(false);
+            }
+          } catch (proxyError) {
             // 网络检测失败，固定显示网络错误页面
             setIsOnline(false);
           }
-        } catch (proxyError) {
-          // 网络检测失败，固定显示网络错误页面
-          setIsOnline(false);
         }
       } finally {
         setIsLoading(false);
