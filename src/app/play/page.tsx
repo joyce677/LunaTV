@@ -1,13 +1,43 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Heart } from 'react-icons/fa';
 import { Suspense } from 'react';
-import { PageLayout } from '../components/PageLayout';
-import { EpisodeSelector } from '../components/EpisodeSelector';
+import { PageLayout } from '../../components/PageLayout';
+import { EpisodeSelector } from '../../components/EpisodeSelector';
+import { useHlsVideoUrl } from '../../hooks/useHlsVideoUrl';
+import { getAuthInfoFromBrowserCookie } from '../../lib/auth';
+import { savePlayProgress } from '../../lib/db';
+import { SearchResult } from '../../lib/types';
+
+// 默认跳过配置
+const defaultSkipConfig = {
+  enabled: false,
+  skipIntro: false,
+  skipOutro: false
+};
 
 // PlayPageClient 组件
 const PlayPageClient = () => {
   const [Hls, videoUrl, loading, blockAdEnabled] = useHlsVideoUrl();
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [isEpisodeSelectorCollapsed, setIsEpisodeSelectorCollapsed] = useState(false);
+  const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(0);
+  const [currentSource, setCurrentSource] = useState('');
+  const [favorited, setFavorited] = useState(false);
+  const [isWakeLocked, setIsWakeLocked] = useState(false);
+  const [error, setError] = useState('');
+  const [videoTitle, setVideoTitle] = useState('');
+  const [totalEpisodes, setTotalEpisodes] = useState(1);
+  const [detail, setDetail] = useState<SearchResult | null>(null);
+  const [availableSources, setAvailableSources] = useState<SearchResult[]>([]);
+  const [sourceSearchLoading, setSourceSearchLoading] = useState(false);
+  const [sourceSearchError, setSourceSearchError] = useState<string | null>(null);
+  const [precomputedVideoInfo, setPrecomputedVideoInfo] = useState(new Map());
+  const [videoDoubanId, setVideoDoubanId] = useState(0);
+  const [videoCover, setVideoCover] = useState('');
+  const [movieDetails, setMovieDetails] = useState(null);
+  const [loadingMovieDetails, setLoadingMovieDetails] = useState(false);
+  
+  const artPlayerRef = useRef(null);
   const [isDraggingProgressRef, setIsDraggingProgressRef] = useState(false);
   const [resizeResetTimeoutRef, setResizeResetTimeoutRef] = useState(null);
   const [seekResetTimeoutRef, setSeekResetTimeoutRef] = useState(null);
