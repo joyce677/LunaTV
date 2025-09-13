@@ -42,6 +42,8 @@ const PlayPageClient = () => {
   const [loadingMovieDetails, setLoadingMovieDetails] = useState(false);
   
   const artPlayerRef = useRef(null);
+  const detailRef = useRef<SearchResult | null>(null);
+  const currentEpisodeIndexRef = useRef(0);
   const [isDraggingProgressRef, setIsDraggingProgressRef] = useState(false);
   const [resizeResetTimeoutRef, setResizeResetTimeoutRef] = useState(null);
   const [seekResetTimeoutRef, setSeekResetTimeoutRef] = useState(null);
