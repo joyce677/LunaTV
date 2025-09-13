@@ -11,6 +11,7 @@ import React, {
 
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
+import MovieInfo from './MovieInfo';
 
 // 定义视频信息类型
 interface VideoInfo {
@@ -18,6 +19,19 @@ interface VideoInfo {
   loadSpeed: string;
   pingTime: number;
   hasError?: boolean; // 添加错误状态标识
+}
+
+interface MovieDetails {
+  rate?: string;
+  directors?: string[];
+  screenwriters?: string[];
+  cast?: string[];
+  first_aired?: string;
+  countries?: string[];
+  languages?: string[];
+  episodes?: number;
+  episode_length?: string;
+  movie_duration?: string;
 }
 
 interface EpisodeSelectorProps {
@@ -42,6 +56,14 @@ interface EpisodeSelectorProps {
   sourceSearchError?: string | null;
   /** 预计算的测速结果，避免重复测速 */
   precomputedVideoInfo?: Map<string, VideoInfo>;
+  /** 影片信息相关 */
+  videoDoubanId?: number;
+  videoCover?: string;
+  detail?: SearchResult;
+  movieDetails?: MovieDetails;
+  loadingMovieDetails?: boolean;
+  favorited?: boolean;
+  onToggleFavorite?: () => void;
 }
 
 /**
@@ -61,6 +83,13 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   sourceSearchLoading = false,
   sourceSearchError = null,
   precomputedVideoInfo,
+  videoDoubanId,
+  videoCover,
+  detail,
+  movieDetails,
+  loadingMovieDetails,
+  favorited,
+  onToggleFavorite,
 }) => {
   const router = useRouter();
   const pageCount = Math.ceil(totalEpisodes / episodesPerPage);
@@ -349,7 +378,22 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
   );
 
   return (
-    <div className='md:ml-2 px-4 py-0 h-full rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 overflow-hidden'>
+    <div className='flex flex-col h-full'>
+      {/* 影片介绍 */}
+      <MovieInfo
+        videoTitle={videoTitle}
+        videoYear={detail?.year}
+        videoDoubanId={videoDoubanId}
+        videoCover={detail?.poster}
+        detail={detail}
+        movieDetails={movieDetails}
+        loadingMovieDetails={loadingMovieDetails}
+        favorited={favorited}
+        onToggleFavorite={onToggleFavorite}
+      />
+      
+      {/* 选集和换源 */}
+      <div className='md:ml-2 px-4 py-0 flex-1 rounded-xl bg-black/10 dark:bg-white/5 flex flex-col border border-white/0 dark:border-white/30 overflow-hidden'>
       {/* 主要的 Tab 切换 - 无缝融入设计 */}
       <div className='flex mb-1 -mx-6 flex-shrink-0'>
         {totalEpisodes > 1 && (
@@ -677,6 +721,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
             )}
         </div>
       )}
+      </div>
     </div>
   );
 };
