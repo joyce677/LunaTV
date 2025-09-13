@@ -77,15 +77,25 @@ const YouTubePage = () => {
 
         clearTimeout(timeoutId);
         setIsOnline(true);
+        // 只有在连接成功时才加载频道和视频数据
+        loadChannelsAndVideos();
       } catch (error) {
         try {
           const proxyResponse = await fetch('/api/youtube-check');
-          setIsOnline(proxyResponse.ok);
+          if (proxyResponse.ok) {
+            setIsOnline(true);
+            // 只有在连接成功时才加载频道和视频数据
+            loadChannelsAndVideos();
+          } else {
+            setIsOnline(false);
+          }
         } catch (proxyError) {
           setIsOnline(false);
         }
       } finally {
         setIsLoading(false);
+        setLoadingVideos(false);
+        setInitialLoadComplete(true);
       }
     };
 
@@ -132,14 +142,10 @@ const YouTubePage = () => {
         setVideosByChannel(newVideosByChannel); // 更新视频数据结构
       } catch (error) {
         console.error('加载频道和视频失败:', error);
-      } finally {
-        setLoadingVideos(false);
-        setInitialLoadComplete(true);
       }
     };
 
     checkYouTubeAccess();
-    loadChannelsAndVideos();
   }, []);
 
   // 处理URL参数中的play参数
