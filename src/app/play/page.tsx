@@ -65,7 +65,7 @@ const PlayPageClient = () => {
     }
   };
 
-  const saveCurrentPlayProgress = () => {
+  const saveCurrentPlayProgress = async () => {
     const authInfo = getAuthInfoFromBrowserCookie();
     if (authInfo?.username) {
       await savePlayProgress({ currentEpisodeIndex, currentSource, progress: artPlayerRef.current.currentTime });
