@@ -70,9 +70,12 @@ const YouTubePage = () => {
         const cached = localStorage.getItem(CACHE_KEY);
         if (cached) {
           const { isOnline, timestamp } = JSON.parse(cached);
-          const now = Date.now();
-          if (now - timestamp < CACHE_DURATION) {
-            return isOnline;
+          // 只有成功的检测结果才会被缓存，所以这里isOnline应该总是true
+          if (isOnline) {
+            const now = Date.now();
+            if (now - timestamp < CACHE_DURATION) {
+              return true;
+            }
           }
         }
       } catch (error) {
@@ -83,11 +86,17 @@ const YouTubePage = () => {
 
     const setCachedConnectivity = (isOnline: boolean) => {
       try {
-        const cacheData = {
-          isOnline,
-          timestamp: Date.now()
-        };
-        localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        if (isOnline) {
+          // 只缓存成功的检测结果
+          const cacheData = {
+            isOnline: true,
+            timestamp: Date.now()
+          };
+          localStorage.setItem(CACHE_KEY, JSON.stringify(cacheData));
+        } else {
+          // 检测失败时清除缓存，确保下次访问会重新检测
+          localStorage.removeItem(CACHE_KEY);
+        }
       } catch (error) {
         console.error('保存连通性缓存失败:', error);
       }
@@ -135,13 +144,13 @@ const YouTubePage = () => {
         } else {
           // 超时了，强制设置为离线
           setIsOnline(false);
-          setCachedConnectivity(false); // 缓存失败结果
+          setCachedConnectivity(false); // 清除缓存，不缓存失败结果
         }
       } catch (error) {
         // 如果是超时导致的错误，直接设置为离线
         if (isTimeout) {
           setIsOnline(false);
-          setCachedConnectivity(false); // 缓存失败结果
+          setCachedConnectivity(false); // 清除缓存，不缓存失败结果
         } else {
           // 尝试备用检测
           try {
@@ -154,12 +163,12 @@ const YouTubePage = () => {
             } else {
               // 网络检测失败，固定显示网络错误页面
               setIsOnline(false);
-              setCachedConnectivity(false); // 缓存失败结果
+              setCachedConnectivity(false); // 清除缓存，不缓存失败结果
             }
           } catch (proxyError) {
             // 网络检测失败，固定显示网络错误页面
             setIsOnline(false);
-            setCachedConnectivity(false); // 缓存失败结果
+            setCachedConnectivity(false); // 清除缓存，不缓存失败结果
           }
         }
       } finally {
