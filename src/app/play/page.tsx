@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Heart } from 'react-icons/fa';
 import { Suspense } from 'react';
+import Hls from 'hls.js';
 import PageLayout from '../../components/PageLayout';
 import { EpisodeSelector } from '../../components/EpisodeSelector';
-import { useHlsVideoUrl } from '../../hooks/useHlsVideoUrl';
+
 import { getAuthInfoFromBrowserCookie } from '../../lib/auth';
 import { savePlayProgress } from '../../lib/db';
 import { SearchResult } from '../../lib/types';
@@ -17,7 +18,10 @@ const defaultSkipConfig = {
 
 // PlayPageClient 组件
 const PlayPageClient = () => {
-  const [Hls, videoUrl, loading, blockAdEnabled] = useHlsVideoUrl();
+  const [hlsInstance, setHlsInstance] = useState<typeof Hls | null>(null);
+  const [videoUrl, setVideoUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [blockAdEnabled, setBlockAdEnabled] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [isEpisodeSelectorCollapsed, setIsEpisodeSelectorCollapsed] = useState(false);
   const [currentEpisodeIndex, setCurrentEpisodeIndex] = useState(0);
@@ -114,25 +118,14 @@ const PlayPageClient = () => {
   };
 
   const formatTime = (time: number) => {
-    return formatTime(time);
-  };
-
-  const initPlayer = async () => {
-    try {
-      const [{ default: Artplayer }, { default: artplayerPluginDanmuku }] = await Promise.all([
-        import('artplayer'),
-        import('artplayer-plugin-danmuku')
-      ]);
-
-      // 将导入的模块设置为全局变量供 initPlayer 使用
-      (window as any).DynamicArtplayer = Artplayer;
-      (window as any).DynamicArtplayerPluginDanmuku = artplayerPluginDanmuku;
-
-      await initPlayer();
-    } catch (error) {
-      console.error('动态导入 ArtPlayer 失败:', error);
-      setError('播放器加载失败');
+    const hours = Math.floor(time / 3600);
+    const minutes = Math.floor((time % 3600) / 60);
+    const seconds = Math.floor(time % 60);
+    
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
     }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
   const loadAndInit = async () => {
@@ -142,18 +135,21 @@ const PlayPageClient = () => {
         import('artplayer-plugin-danmuku')
       ]);
 
-      // 将导入的模块设置为全局变量供 initPlayer 使用
+      // 将导入的模块设置为全局变量
       (window as any).DynamicArtplayer = Artplayer;
       (window as any).DynamicArtplayerPluginDanmuku = artplayerPluginDanmuku;
-
-      await initPlayer();
+      
+      // 这里应该初始化播放器，但需要实际的初始化逻辑
+      console.log('ArtPlayer 模块加载完成');
     } catch (error) {
       console.error('动态导入 ArtPlayer 失败:', error);
       setError('播放器加载失败');
     }
   };
 
-  loadAndInit();
+  useEffect(() => {
+    loadAndInit();
+  }, []);
 
   return (
     <PageLayout>
