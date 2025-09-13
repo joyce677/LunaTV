@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Heart } from 'react-icons/fa';
 import { Suspense } from 'react';
-import { PageLayout } from '../../components/PageLayout';
+import PageLayout from '../../components/PageLayout';
 import { EpisodeSelector } from '../../components/EpisodeSelector';
 import { useHlsVideoUrl } from '../../hooks/useHlsVideoUrl';
 import { getAuthInfoFromBrowserCookie } from '../../lib/auth';
